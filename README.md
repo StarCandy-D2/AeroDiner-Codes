@@ -96,7 +96,7 @@ EventBus.RaiseFadeEvent(FadeEventType.FadeOutAndLoadScene,
 
 3. BGM/SFX/Fade 이벤트 → 해당 매니저 직구독 → 연출 실행
 
-##3️⃣ 대표 시나리오
+## 3️⃣ 대표 시나리오
 시나리오 1: 튜토리얼 중 인벤토리 열기 + 효과음
 
 
