@@ -1,4 +1,4 @@
-🕹 플레이어 제어 & 인벤토리 시스템 — PlayerController & PlayerInventory
+## 🕹 플레이어 제어 & 인벤토리 시스템 — PlayerController & PlayerInventory
 🌟 요구 사항
 
 플레이어가 4방향 이동 및 **상호작용(사용/픽업/드롭)**을 자연스럽게 수행.
