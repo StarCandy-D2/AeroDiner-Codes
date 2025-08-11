@@ -1,5 +1,7 @@
 # 🎛️ UI·오디오·페이드 전환 통합 이벤트 시스템 — README
 
+![UI Event Architecture](ui_event_architecture.png)
+
 Unity 기반 레스토랑 시뮬레이션의 **UI, 오디오, 페이드 전환**을  
 **EventBus → UIManager → IUIEventHandler 체인** 및 **직접 구독 매니저** 구조로 느슨하게 연결하여 제어합니다.  
 이 구조는 **씬 전환, UI 토글, BGM·SFX 제어, 페이드 연출**을 모두 일관된 이벤트 방식으로 관리합니다.
