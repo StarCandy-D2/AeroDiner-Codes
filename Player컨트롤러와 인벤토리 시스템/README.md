@@ -1,135 +1,89 @@
-# 🎛️ UI·오디오·페이드 전환 통합 이벤트 시스템 — README
-
-![UI Event Architecture](ui_event_architecture.png)
-
-Unity 기반 레스토랑 시뮬레이션의 **UI, 오디오, 페이드 전환**을  
-**EventBus → UIManager → IUIEventHandler 체인** 및 **직접 구독 매니저** 구조로 느슨하게 연결하여 제어합니다.  
-이 구조는 **씬 전환, UI 토글, BGM·SFX 제어, 페이드 연출**을 모두 일관된 이벤트 방식으로 관리합니다.
+## 🕹 플레이어 제어 & 인벤토리 시스템 — PlayerController & PlayerInventory
 
 ---
 
-## 📂 폴더 구조
-UIFlow/
+🌟 **요구 사항**
 
-├─ Core/
-
-│ ├─ EventBus.cs # 모든 UI/게임/연출 이벤트 허브
-
-│ └─ UIManager.cs # Addressables 로드, 핸들러 체인 관리
-
-├─ Handlers/ # IUIEventHandler 구현체
-
-│ ├─ OverSceneUIHandler.cs # 전 씬 공통 UI
-
-│ ├─ TutorialUIHandler.cs # 튜토리얼 전용 UI
-
-│ ├─ StartSceneUIHandler.cs
-
-│ ├─ MainSceneUIHandler.cs
-
-│ └─ DaySceneUIHandler.cs
-
-├─ Views/ # 실제 UI 패널 컨트롤러
-
-│ ├─ InventoryView.cs
-
-│ ├─ RecipeBookPanel.cs
-
-│ ├─ StationPanel.cs
-
-│ ├─ QuestPanel.cs
-
-│ ├─ StorePanel.cs
-
-│ ├─ ResultPanel.cs
-
-│ ├─ OrderPanel.cs
-
-│ └─ RoundTimerUI.cs
-
-└─ Presentation/
-
-├─ BGMManager.cs # BGM 재생/페이드 관리
-
-├─ SFXManager.cs # SFX 재생/루프 관리
-
-└─ FadeManager.cs # 페이드 연출 및 씬 전환
+- 플레이어가 **4방향 이동** 및 **상호작용(사용/픽업/드롭)**을 자연스럽게 수행.
+- 현재 **GamePhase**에 따라 이동·픽업·드롭 가능 여부를 제어.
+- 애니메이션, SFX, UI 경고, 타일맵 하이라이트 등을 **상호작용 흐름에 통합**.
+- 손에 든 아이템(음식/설비)에 따라 **아이템 슬롯 위치·애니메이션**을 변경.
 
 ---
 
-## 1️⃣ 핵심 설계
+✅ **구현 방법 — PlayerController(입력·상호작용) + PlayerInventory(아이템 관리)**
 
-### A. 이벤트 허브: **EventBus**
-- **UIEventType / GameEventType / BGMEventType / SFXType / FadeEventType**를 정의하고 통합 브로드캐스트.
-- UI 전환(`Raise`), BGM 재생(`PlayBGM`), SFX 재생(`PlaySFX`), 페이드(`RaiseFadeEvent`) 모두 동일 경로로 호출.
-- 일부 시스템(오디오, 페이드)은 UIManager를 거치지 않고 EventBus를 직접 구독.
-
-### B. UI 진입점: **UIManager**
-- Addressables로 씬별 UI 프리팹 로드 → `currentSceneUIs`에 부착.
-- `RegisterHandlersForScene()`로 **핸들러 체인** 구성:
-  1. **OverSceneUIHandler** — 전 씬 공통 UI
-  2. **TutorialUIHandler** — 튜토리얼 UI
-  3. **씬별 핸들러** — Start / Main / Day Scene
-- `OnUIEvent()`에서 순서대로 핸들러 `Handle()` 호출 → `true` 반환 시 전파 중단.
-- 특정 UI는 `initiallyDisabledTypes`로 초기 비활성 처리.
-
-### C. 핸들러 체인 (IUIEventHandler 구현체)
-1. **OverSceneUIHandler**  
-   - 공통 UI(인벤토리, 레시피, 스테이션, 퀘스트, 옵션, 페이드 씬전환 등) 제어.
-2. **TutorialUIHandler**  
-   - 튜토리얼 Tu1~Tu9, 단계별 UI 표시/탭 전환.
-3. **씬별 UI 핸들러**  
-   - StartSceneUIHandler, MainSceneUIHandler, DaySceneUIHandler
-
-### D. 오디오 & 페이드 매니저 (EventBus 직구독)
-- **BGMManager**  
-  - `OnBGMRequested` 구독.
-  - 이벤트 타입에 따라 BGM 선택, 일부는 페이드 적용.
-  - `FadeOutAndPlayNew`, `FadeOutAndStop`로 부드러운 전환.
-  - `SetVolume`으로 실시간 볼륨 변경.
-  
-- **SFXManager**  
-  - `OnSFXRequested`, `OnLoopSFXRequested`, `OnStopLoopSFXRequested` 구독.
-  - 풀링 기반 오디오 소스 관리, 부족 시 동적 생성.
-  - 루프 SFX는 type별 AudioSource 유지.
-  - `SetVolume`으로 전체 효과음 볼륨 조절.
-  
-- **FadeManager**  
-  - `OnFadeRequested` 구독.
-  - `FadeTo`로 투명도 변화, `FadeOutAndLoadScene`으로 씬 전환.
-  - 씬 로드시 `LoadingTargetHolder.TargetScene` 설정 후 로딩씬 로드.
-  - `OnFadeCompleted` 이벤트로 완료 알림.
-
-### E. 실행 주체: Views
-- 핸들러가 직접 View 메서드 호출(`Show()`, `Hide()`, `OpenTab()`) 혹은 `SetActive` 토글.
-- UI 갱신·애니메이션·데이터 바인딩을 실제 수행.
+### 1. PlayerController
+- **입력 처리**
+  - `InputActionReference`(move/interact/pickup)로 입력을 읽음.
+  - OnEnable/OnDisable에서 액션 활성/비활성 및 콜백 등록.
+- **이동 제어**
+  - `GamePhase`가 `EditStation` / `Day` / `Operation` / `Closing`일 때만 이동 가능.
+  - Rigidbody2D로 FixedUpdate에서 위치 갱신.
+- **상호작용 로직**
+  - `RaycastForInteractable()`로 플레이어 전방 BoxCast → IInteractable 타겟 결정.
+  - 설비 들고 있으면 GridCell 우선, 아니면 Station 우선.
+  - `OnInteract()` — 현재 방향 최적 타겟과 `InteractionType.Use` 상호작용.
+  - `OnPickupDown()` — 손에 아이템 없으면 픽업, 있으면 드롭. 조건별 애니메이션·SFX·이벤트 호출.
+- **애니메이션 & SFX**
+  - 이동 방향, 마지막 방향, IsCarrying, IsInteract 등 Animator 파라미터 업데이트.
+  - Idle 상태 일정 시간 유지 시 랜덤 IdleBreak 트리거.
+  - 이동 시 발소리 SFX 반복 재생, 정지 시 정지.
+- **UI/환경 상호작용**
+  - 투명벽(Collider Tag: `INVISIBLE_WALL_TAG`) 충돌 시 상황별 메시지 UIEvent로 표시 (`ShowWallPopup` / `HideWallPopup`).
+  - TilemapController를 통해 선택 셀 하이라이트.
 
 ---
 
-## 2️⃣ 이벤트 흐름
+### 2. PlayerInventory
+- **보유 상태**
+  - `HoldingFood` (FoodDisplay), `HoldingStation` (IMovableStation)로 현재 들고 있는 아이템 추적.
+  - `IsHoldingItem` 플래그로 보유 여부 확인.
+- **픽업**
+  - EditStation Phase → 설비 픽업 (`HandleStationPickup`)  
+    - 부모를 itemSlot으로 변경, Rigidbody/Collider 비활성화, 모든 GridCell 표시.
+  - Operation/Closing Phase → 재료/음식 픽업 (`HandleFoodPickup`)  
+    - 부모를 itemSlot으로 변경, 물리/충돌 비활성화, originPlace 콜백 호출.
+- **드롭**
+  - EditStation Phase → GridCell에 설비 드롭 (`HandleStationDrop` → PlacementManager 배치 시도).
+  - Operation/Closing Phase → 음식/재료 드롭 (`HandleFoodDrop`)  
+    - 대상 Station/Shelf/Table에서 CanPlaceIngredient 검사.
+    - 성공 시 아이템 파괴(`ConsumeHeldItem`) 및 인벤토리 비우기.
+- **이벤트 연동**
+  - 픽업/드롭 시 `EventBus.Raise(GameEventType.PlayerPickedUpItem, data)` 호출.
+  - 드롭 성공 후 Station 레이아웃 변경 이벤트 전송.
+- **디버그**
+  - `showDebugInfo` 활성화 시 부적절한 동작이나 거부 사유 로그 출력.
 
-1. **발신자**(버튼 클릭, 게임 시스템, 튜토리얼 트리거)가 EventBus 호출  
+---
+
+### 3. 설계 특징
+- **Phase 기반 제어**: 이동, 픽업, 드롭 모두 GamePhase 조건에 따라 허용/차단.
+- **상호작용 우선순위**: 들고 있는 아이템 종류(Station/Food)에 따라 타겟 우선순위 변경.
+- **물리 안전성**: 픽업 시 Rigidbody2D와 Collider 비활성화로 충돌 방지.
+- **UI·SFX 연계**: 행동마다 UI 경고, 사운드, 애니메이션 동기화.
+- **타일맵 연동**: EditStation Phase에서 GridCell 시각화로 배치 가이드 제공.
+
+---
+
+### 4. 대표 시나리오
+
+**재료 픽업**
 ```csharp
-EventBus.Raise(UIEventType.ShowInventory, null);
-EventBus.PlayBGM(BGMEventType.Intro1);
-EventBus.PlaySFX(SFXType.ButtonClick);
-EventBus.RaiseFadeEvent(FadeEventType.FadeOutAndLoadScene, 
-    new FadeEventPayload(1f, 1f, scene: "MainScene"));
+// Operation Phase
+var pickupTarget = FindBestInteractable(InteractionType.Pickup);
+playerInventory.TryPickup(pickupTarget);
+// => itemSlot에 배치, 물리/충돌 끔, EventBus로 픽업 이벤트
 ```
-2. UI 이벤트 → UIManager.OnUIEvent() → 핸들러 체인 → View 제어
-
-3. BGM/SFX/Fade 이벤트 → 해당 매니저 직구독 → 연출 실행
-
-## 3️⃣ 대표 시나리오
-시나리오 1: 튜토리얼 중 인벤토리 열기 + 효과음
-
-
-EventBus.Raise(UIEventType.ShowInventory, null);
-EventBus.PlaySFX(SFXType.UIOpen);
-시나리오 2: 씬 전환 + BGM 교체
-
+** 설비 배치**
 ```csharp
-EventBus.RaiseFadeEvent(FadeEventType.FadeOutAndLoadScene,
-    new FadeEventPayload(1f, 1f, scene: "MainScene"));
-EventBus.PlayBGM(BGMEventType.MainTheme);
+// EditStation Phase
+var gridCell = FindBestInteractable(InteractionType.Pickup) as GridCellStatus;
+playerInventory.DropItem(gridCell);
+// => PlacementManager.TryPlaceStationAt 호출, 성공 시 손에서 제거
+```
+** 투명벽 경고**
+```csharp
+// Operation Phase 중 벽에 부딪힘
+EventBus.Raise(UIEventType.ShowWallPopup, "영업 중엔 나갈 수 없습니다!");
 ```
