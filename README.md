@@ -11,26 +11,47 @@ Unity 기반 레스토랑 시뮬레이션의 **UI, 오디오, 페이드 전환**
 ## 📂 폴더 구조
 UIFlow/
 ├─ Core/
+
 │ ├─ EventBus.cs # 모든 UI/게임/연출 이벤트 허브
+
 │ └─ UIManager.cs # Addressables 로드, 핸들러 체인 관리
+
 ├─ Handlers/ # IUIEventHandler 구현체
+
 │ ├─ OverSceneUIHandler.cs # 전 씬 공통 UI
+
 │ ├─ TutorialUIHandler.cs # 튜토리얼 전용 UI
+
 │ ├─ StartSceneUIHandler.cs
+
 │ ├─ MainSceneUIHandler.cs
+
 │ └─ DaySceneUIHandler.cs
+
 ├─ Views/ # 실제 UI 패널 컨트롤러
+
 │ ├─ InventoryView.cs
+
 │ ├─ RecipeBookPanel.cs
+
 │ ├─ StationPanel.cs
+
 │ ├─ QuestPanel.cs
+
 │ ├─ StorePanel.cs
+
 │ ├─ ResultPanel.cs
+
 │ ├─ OrderPanel.cs
+
 │ └─ RoundTimerUI.cs
+
 └─ Presentation/
+
 ├─ BGMManager.cs # BGM 재생/페이드 관리
+
 ├─ SFXManager.cs # SFX 재생/루프 관리
+
 └─ FadeManager.cs # 페이드 연출 및 씬 전환
 
 ---
