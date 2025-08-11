@@ -92,10 +92,11 @@ EventBus.PlaySFX(SFXType.ButtonClick);
 EventBus.RaiseFadeEvent(FadeEventType.FadeOutAndLoadScene, 
     new FadeEventPayload(1f, 1f, scene: "MainScene"));
 ```
-UI 이벤트 → UIManager.OnUIEvent() → 핸들러 체인 → View 제어
+2. UI 이벤트 → UIManager.OnUIEvent() → 핸들러 체인 → View 제어
 
-BGM/SFX/Fade 이벤트 → 해당 매니저 직구독 → 연출 실행
-3️⃣ 대표 시나리오
+3. BGM/SFX/Fade 이벤트 → 해당 매니저 직구독 → 연출 실행
+
+##3️⃣ 대표 시나리오
 시나리오 1: 튜토리얼 중 인벤토리 열기 + 효과음
 
 
